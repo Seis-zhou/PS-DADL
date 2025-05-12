@@ -61,7 +61,6 @@ class SNRCallback(Callback):
         save_path = os.path.join(save_dir, f'denoised_data_epoch_{epoch + 1}.mat')
         io.savemat(save_path, {'data': denoised_data})
 
-        # 计算 denoised_data 的 SNR
         snr_value = yc_snr(self.clean_data, denoised_data, 2)
         print(f"\nEpoch {epoch + 1}: Signal to Noise Ratio (SNR) = {snr_value:.4f} dB\n")
         self.metrics['snr'].append(snr_value)
@@ -115,22 +114,6 @@ print(f"Clean_data shape: {Clean_data.shape}")
 n1, n2, n3 = np.shape(Clean_data)
 io.savemat(f'./Datasets/{data_name}_clean.mat', mdict={'data': Clean_data}, appendmat=True)
 
-ns = 0.3
-np.random.seed(1234567)
-random_noise = np.zeros_like(Clean_data)
-for i in range(n1):
-    mask = np.random.rand(n2, n3)
-    mask[mask < 0.6] = 0
-    mask[mask >= 0.6] = 1
-    random_noise[i, :, :] = ns * np.random.normal(0, 1, (n2, n3)) * mask
-
-mask = np.random.rand(1, n2, n3)
-mask[mask < 0.8] = 0
-mask[mask >= 0.8] = 1
-err_n = np.zeros_like(Clean_data)
-for i in range(n1):
-    err_n[i, :, :] = ns * np.random.randn(1, n2, n3) * mask
-
 Noisy_data = Clean_data + random_noise + err_n
 io.savemat(f'./Datasets/{data_name}_noisy.mat', mdict={'data': Noisy_data}, appendmat=True)
 
@@ -139,7 +122,6 @@ print("Signal to Noise Ratio of the noisy data is {:.4f} dB".format(snr_value1))
 
 A = np.array(Noisy_data)
 
-# 定义参数组
 param_sets = [(15, 1)]
 for l1, s1 in param_sets:
     l2, l3, s2, s3 = l1, l1, s1, s1
@@ -267,7 +249,7 @@ for l1, s1 in param_sets:
 
     predicted = np.transpose(predicted)
     with h5py.File('./Datasets/Output_Patches_3D.h5', 'w') as f:
-        f.create_dataset('data', data=predicted, compression="gzip")  # 采用 GZIP 压缩
+        f.create_dataset('data', data=predicted, compression="gzip")
 
     print(f"transpose predicted shape: {predicted.shape}")
     Denoised_data = yc_patch3d_inv(predicted, n1, n2, n3, l1, l2, l3, s1, s2, s3)
